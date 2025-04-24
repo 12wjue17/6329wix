@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hearing Ability Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .question { margin: 30px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        audio { margin: 10px 0; }
+        .options { margin: 15px 0; }
+        button { 
+            background: #4CAF50; color: white; 
+            border: none; padding: 12px 25px;
+            border-radius: 4px; cursor: pointer;
+            margin: 10px 0;
+        }
+        .feedback { margin-left: 10px; }
+        .correct { color: green; }
+        .incorrect { color: red; }
+        #score { font-size: 1.2em; font-weight: bold; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>Hearing Ability Test</h1>
+
+    <div class="question" id="question1">
+        <h3>Question 1: Listen to the sound</h3>
+        <audio controls>
+            <source src="sound1.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+        <p>What is this sound?</p>
+        <div class="options q1-options">
+            <label><input type="radio" name="q1" value="A"> A) Bird chirping</label><br>
+            <label><input type="radio" name="q1" value="B"> B) Car horn</label><br>
+            <label><input type="radio" name="q1" value="C"> C) Doorbell</label><br>
+            <label><input type="radio" name="q1" value="D"> D) Phone ring</label>
+        </div>
+        <div class="feedback"></div>
+    </div>
+
+    <div class="question" id="question2">
+        <h3>Question 2: Listen to the sound</h3>
+        <audio controls>
+            <source src="sound2.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+        <p>What is this sound?</p>
+        <div class="options q2-options">
+            <label><input type="radio" name="q2" value="A"> A) Ocean waves</label><br>
+            <label><input type="radio" name="q2" value="B"> B) Rain</label><br>
+            <label><input type="radio" name="q2" value="C"> C) Wind</label><br>
+            <label><input type="radio" name="q2" value="D"> D) Campfire</label>
+        </div>
+        <div class="feedback"></div>
+    </div>
+
+    <div class="question" id="question3">
+        <h3>Question 3: Listen to the sound</h3>
+        <audio controls>
+            <source src="sound3.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+        <p>What is this sound?</p>
+        <div class="options q3-options">
+            <label><input type="radio" name="q3" value="A"> A) Cat meow</label><br>
+            <label><input type="radio" name="q3" value="B"> B) Dog bark</label><br>
+            <label><input type="radio" name="q3" value="C"> C) Cow moo</label><br>
+            <label><input type="radio" name="q3" value="D"> D) Sheep bleat</label>
+        </div>
+        <div class="feedback"></div>
+    </div>
+
+    <!-- 新增的第4题 -->
+    <div class="question" id="question4">
+        <h3>Question 4: Listen to the sound</h3>
+        <audio controls>
+            <source src="sound4.mp3" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+        <p>What is this sound?</p>
+        <div class="options q4-options">
+            <label><input type="radio" name="q4" value="A"> A) Clock ticking</label><br>
+            <label><input type="radio" name="q4" value="B"> B) Keyboard typing</label><br>
+            <label><input type="radio" name="q4" value="C"> C) Heartbeat</label><br>
+            <label><input type="radio" name="q4" value="D"> D) Water dripping</label>
+        </div>
+        <div class="feedback"></div>
+    </div>
+
+    <button onclick="checkAnswers()">Submit Answers</button>
+    <div id="score"></div>
+
+    <script>
+        const answers = {
+            1: "A",  // Q1 correct answer
+            2: "B",  // Q2 correct answer
+            3: "D",  // Q3 correct answer
+            4: "C"   // 新增的第4题正确答案
+        };
+
+        function checkAnswers() {
+            let score = 0;
+            const totalQuestions = 4; // 更新总题数
+
+            for (let i = 1; i <= totalQuestions; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                const feedbackDiv = document.querySelector(`#question${i} .feedback`);
+                
+                if (!selected) {
+                    feedbackDiv.innerHTML = "<span class='incorrect'>✗ Please select an answer!</span>";
+                    continue;
+                }
+
+                if (selected.value === answers[i]) {
+                    score += 25; // 每题25分
+                    feedbackDiv.innerHTML = "<span class='correct'>✓ Correct!</span>";
+                } else {
+                    feedbackDiv.innerHTML = `<span class='incorrect'>✗ Incorrect. Correct answer is ${answers[i]}</span>`;
+                }
+            }
+
+            document.getElementById('score').innerHTML = `Your score: ${score}/100`;
+        }
+    </script>
+</body>
+</html>
