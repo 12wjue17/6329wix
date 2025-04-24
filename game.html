@@ -1,100 +1,165 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        .tactile-grid { display: flex; margin: 20px; }
-        .tile {
-            width: 60px; height: 60px; border: 1px solid #666;
-            background: #fff; position: relative;
-        }
-        /* 行进盲道砖样式 */
-        .striped {
-            background: repeating-linear-gradient(
-                45deg, #ffd700 0px, #ffd700 10px,
-                #ff8c00 10px, #ff8c00 20px
-            );
-        }
-        /* 提示盲道砖样式 */
-        .dotted {
-            background: radial-gradient(circle at 10px 10px, 
-                #4682b4 20%, #fff 21%);
-            background-size: 20px 20px;
-        }
-        /* 危险警告砖样式 */
-        .warning {
-            background: radial-gradient(circle at 15px 15px, 
-                #ff0000 30%, #fff 31%);
-            background-size: 30px 30px;
-        }
-        .start::after { content: "🚦"; font-size: 30px; }
-        .end::after { content: "🚩"; font-size: 30px; }
-    </style>
-</head>
-<body>
-    <h2>盲道规范知识测试</h2>
-    
-    <div id="quiz">
-        <p>1. 行进盲道砖的凸起样式是：</p>
-        <button onclick="checkAnswer(1, 'B')">A) 圆点状</button>
-        <button onclick="checkAnswer(1, 'A')">B) 条状</button>
-
-        <p>2. 人行横道前应铺设什么砖：</p>
-        <button onclick="checkAnswer(2, 'B')">A) 行进盲道砖</button>
-        <button onclick="checkAnswer(2, 'A')">B) 提示盲道砖</button>
+<div class="game-container">
+  <!-- 知识测试 -->
+  <div class="quiz-section">
+    <h3>盲道知识测试</h3>
+    <div class="question">
+      <p>1. 行进盲道砖的凸起类型是？</p>
+      <div class="options">
+        <button class="option" data-correct="true">条状凸起</button>
+        <button class="option">圆点凸起</button>
+      </div>
     </div>
+    <div class="question">
+      <p>2. 斑马线前应铺设什么砖？</p>
+      <div class="options">
+        <button class="option">行进盲道砖</button>
+        <button class="option" data-correct="true">提示盲道砖</button>
+      </div>
+    </div>
+  </div>
 
-    <h3>过马路盲道铺设挑战</h3>
-    <p>规范要求：</p>
-    <ul>
-        <li>距路缘石30cm处铺设提示盲道砖</li>
-        <li>行进盲道砖与提示盲道砖垂直相交</li>
-        <li>路口前需有危险警告砖</li>
-    </ul>
-    <div class="tactile-grid" id="road"></div>
-    <p>剩余尝试次数：<span id="attempts">3</span></p>
+  <!-- 游戏主体 -->
+  <div class="road-container">
+    <div class="sidewalk">
+      <div class="tactile-tile start-tile">🚶</div>
+      <div class="tactile-tile" data-type="directional"></div>
+      <div class="tactile-tile" data-type="directional"></div>
+      <div class="tactile-tile warning-tile"></div>
+    </div>
+    
+    <div class="crosswalk">
+      <div class="tactile-row">
+        <div class="tactile-tile prompt-tile"></div>
+        <div class="tactile-tile prompt-tile"></div>
+        <div class="tactile-tile prompt-tile"></div>
+      </div>
+      <div class="zebra-line"></div>
+    </div>
+  </div>
 
-    <script>
-        // 初始化道路
-        function initRoad() {
-            const road = document.getElementById('road');
-            // 创建8格道路：0-路缘石 1-提示砖 2-危险警告 3-5行进砖 6-提示砖 7-人行道
-            for(let i=0; i<8; i++){
-                let tile = document.createElement('div');
-                tile.className = 'tile';
-                if(i === 0) tile.classList.add('start');
-                if(i === 7) tile.classList.add('end');
-                tile.onclick = () => placeTile(i);
-                road.appendChild(tile);
-            }
-        }
+  <!-- 操作区 -->
+  <div class="controls">
+    <div class="attempts">剩余机会: <span class="count">3</span></div>
+    <div class="tile-selector">
+      <button class="tile-option active" data-type="directional">
+        <div class="tile-preview directional"></div>
+        <span>行进砖</span>
+      </button>
+      <button class="tile-option" data-type="prompt">
+        <div class="tile-preview prompt"></div>
+        <span>提示砖</span>
+      </button>
+    </div>
+    <button class="check-btn">验证方案</button>
+  </div>
+</div>
 
-        // 专业验证逻辑
-        function validate() {
-            const tiles = document.getElementsByClassName('tile');
-            let errors = [];
-            
-            // 检查关键节点
-            if(!tiles[1].classList.contains('dotted')) errors.push(1);
-            if(!tiles[2].classList.contains('warning')) errors.push(2);
-            if(!tiles[6].classList.contains('dotted')) errors.push(6);
-            
-            // 显示专业提示
-            if(errors.length > 0){
-                showAlert(`错误位置：${errors.join(',')}号砖`);
-                decreaseAttempt();
-            } else {
-                showAlert("符合GB/T 12952-2020规范！", 'success');
-            }
-        }
+<style>
+/* 专业配色方案 */
+:root {
+  --directional-color: #FFD700;  /* 行进砖金色 */
+  --prompt-color: #4169E1;       /* 提示砖皇室蓝 */
+  --warning-color: #FF4500;      /* 警告砖橙红色 */
+}
 
-        // 三次机会用尽后显示标准答案
-        function showAnswer() {
-            const indices = {1:'dotted', 2:'warning', 3:'striped', 
-                           4:'striped', 5:'striped', 6:'dotted'};
-            Object.entries(indices).forEach(([idx,cls]) => {
-                document.getElementsByClassName('tile')[idx].classList.add(cls);
-            });
-        }
-    </script>
-</body>
-</html>
+.tactile-tile {
+  /* 触感纹理实现 */
+  background: repeating-linear-gradient(
+    45deg,
+    #ffffff55,
+    #ffffff55 2px,
+    transparent 2px,
+    transparent 4px
+  );
+}
+
+.directional-tile {
+  background: var(--directional-color);
+  /* 条状凸起效果 */
+  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2);
+}
+
+.prompt-tile {
+  background: var(--prompt-color);
+  /* 圆点凸起效果 */
+  background-image: radial-gradient(
+    circle at 50% 30%,
+    #fff 15%,
+    transparent 15%
+  );
+}
+
+.warning-tile {
+  background: var(--warning-color);
+  /* 大圆点警示效果 */
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    #fff 25%,
+    transparent 25%
+  );
+}
+
+/* T型布局可视化 */
+.road-container {
+  display: grid;
+  grid-template-areas:
+    "sidewalk crosswalk"
+    "warning  crosswalk";
+  gap: 10px;
+}
+
+.sidewalk {
+  grid-area: sidewalk;
+  display: flex;
+  flex-direction: column;
+}
+
+.crosswalk {
+  grid-area: crosswalk;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 斑马线细节 */
+.zebra-line {
+  background: repeating-linear-gradient(
+    to right,
+    #fff 0 30px,
+    #666 30px 60px
+  );
+  height: 8px;
+  margin: 2px 0;
+}
+</style>
+
+<script>
+// 专业验证逻辑
+function validateSolution() {
+  const requiredPattern = {
+    directional: [1, 2],    // 第2、3块为行进砖
+    warning: [3],           // 第4块为警告砖
+    prompt: [4,5,6]         // 斑马线前3块提示砖
+  };
+
+  // 检查垂直相交关系
+  const isVertical = document.querySelector('.sidewalk').style.flexDirection === 'column';
+  
+  // 机会用尽时显示正确答案
+  if(attempts <= 0) {
+    showCorrectPattern(requiredPattern);
+    return;
+  }
+}
+
+function showCorrectPattern(pattern) {
+  // 高亮显示标准铺设方案
+  pattern.directional.forEach(index => {
+    document.querySelectorAll('.tactile-tile')[index]
+      .classList.add('correct-directional');
+  });
+  
+  // 显示危险警告砖
+  document.querySelector('.warning-tile')
+    .classList.add('correct-warning');
+}
+</script>
