@@ -1,172 +1,100 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>盲道导航挑战 - 过马路</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
+        .tactile-grid { display: flex; margin: 20px; }
+        .tile {
+            width: 60px; height: 60px; border: 1px solid #666;
+            background: #fff; position: relative;
         }
-        .quiz-section {
-            border: 2px solid #333;
-            padding: 20px;
-            margin-bottom: 30px;
-            border-radius: 10px;
-        }
-        .game-container {
-            display: grid;
-            grid-template-columns: repeat(8, 60px);
-            gap: 5px;
-            margin: 20px 0;
-        }
-        .cell {
-            width: 60px;
-            height: 60px;
-            border: 2px solid #666;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            background-size: cover;
-        }
-        .circular {
-            background: #FFD700 radial-gradient(circle at 50% 50%, #666 15%, transparent 20%);
-        }
+        /* 行进盲道砖样式 */
         .striped {
-            background: #4682B4 repeating-linear-gradient(-45deg, 
-                transparent, 
-                transparent 10px, 
-                #fff 10px, 
-                #fff 20px);
+            background: repeating-linear-gradient(
+                45deg, #ffd700 0px, #ffd700 10px,
+                #ff8c00 10px, #ff8c00 20px
+            );
         }
-        .start { background-color: #90EE90; }
-        .end { background-color: #FF6347; }
-        .correct { border: 3px solid #32CD32 !important; }
-        .selected-tile { transform: scale(1.1); }
-        button { margin: 10px; padding: 10px 20px; }
+        /* 提示盲道砖样式 */
+        .dotted {
+            background: radial-gradient(circle at 10px 10px, 
+                #4682b4 20%, #fff 21%);
+            background-size: 20px 20px;
+        }
+        /* 危险警告砖样式 */
+        .warning {
+            background: radial-gradient(circle at 15px 15px, 
+                #ff0000 30%, #fff 31%);
+            background-size: 30px 30px;
+        }
+        .start::after { content: "🚦"; font-size: 30px; }
+        .end::after { content: "🚩"; font-size: 30px; }
     </style>
 </head>
 <body>
-    <h1>盲道导航知识测试</h1>
+    <h2>盲道规范知识测试</h2>
     
-    <div class="quiz-section">
-        <h3>问题1：哪种盲道砖用于指示直行？</h3>
-        <button onclick="checkQuiz(1, this)">A) 条纹砖</button>
-        <button onclick="checkQuiz(1, this)">B) 圆形凸起砖</button>
-        <p id="quiz1"></p>
+    <div id="quiz">
+        <p>1. 行进盲道砖的凸起样式是：</p>
+        <button onclick="checkAnswer(1, 'B')">A) 圆点状</button>
+        <button onclick="checkAnswer(1, 'A')">B) 条状</button>
 
-        <h3>问题2：哪种盲道砖用于提示方向变化？</h3>
-        <button onclick="checkQuiz(2, this)">A) 条纹砖</button>
-        <button onclick="checkQuiz(2, this)">B) 圆形凸起砖</button>
-        <p id="quiz2"></p>
+        <p>2. 人行横道前应铺设什么砖：</p>
+        <button onclick="checkAnswer(2, 'B')">A) 行进盲道砖</button>
+        <button onclick="checkAnswer(2, 'A')">B) 提示盲道砖</button>
     </div>
 
-    <h1>过马路盲道铺设挑战</h1>
+    <h3>过马路盲道铺设挑战</h3>
+    <p>规范要求：</p>
+    <ul>
+        <li>距路缘石30cm处铺设提示盲道砖</li>
+        <li>行进盲道砖与提示盲道砖垂直相交</li>
+        <li>路口前需有危险警告砖</li>
+    </ul>
+    <div class="tactile-grid" id="road"></div>
     <p>剩余尝试次数：<span id="attempts">3</span></p>
-    
-    <div class="game-container" id="gameGrid"></div>
-    
-    <div>
-        <button onclick="selectTile('circular')">圆形砖（直行）</button>
-        <button onclick="selectTile('striped')">条纹砖（转向）</button>
-        <button onclick="validatePath()">验证方案</button>
-    </div>
 
     <script>
-        let selectedTile = null;
-        let attempts = 3;
-        const solution = ['start', 'circular', 'circular', 'circular', 'circular', 'circular', 'circular', 'end'];
-        
-        // 初始化游戏网格
-        function initGame() {
-            const grid = document.getElementById('gameGrid');
-            grid.innerHTML = '';
-            
-            for(let i=0; i<8; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.dataset.index = i;
-                
-                if(i === 0) {
-                    cell.className += ' start';
-                    cell.textContent = '🚶';
-                } 
-                else if(i === 7) {
-                    cell.className += ' end';
-                    cell.textContent = '🚩';
-                }
-                
-                cell.onclick = () => placeTile(i);
-                grid.appendChild(cell);
+        // 初始化道路
+        function initRoad() {
+            const road = document.getElementById('road');
+            // 创建8格道路：0-路缘石 1-提示砖 2-危险警告 3-5行进砖 6-提示砖 7-人行道
+            for(let i=0; i<8; i++){
+                let tile = document.createElement('div');
+                tile.className = 'tile';
+                if(i === 0) tile.classList.add('start');
+                if(i === 7) tile.classList.add('end');
+                tile.onclick = () => placeTile(i);
+                road.appendChild(tile);
             }
         }
 
-        // 选择题验证
-        function checkQuiz(quizNum, btn) {
-            const correct = (quizNum === 1 && btn.innerText.includes("B")) || 
-(quizNum === 2 && btn.innerText.includes("A"));
-            const resultEl = document.getElementById(`quiz${quizNum}`);
-            resultEl.textContent = correct ? "✓ 正确！" : "✗ 请重新选择";
-            resultEl.style.color = correct ? "green" : "red";
-        }
-
-        function selectTile(index) {
-            selectedTile = index;
-            document.querySelectorAll('button').forEach(btn => 
-                btn.classList.remove('selected-tile'));
-            event.target.classList.add('selected-tile');
-        }
-
-        function placeTile(index) {
-            if(!selectedTile || index === 0 || index === 7) return;
+        // 专业验证逻辑
+        function validate() {
+            const tiles = document.getElementsByClassName('tile');
+            let errors = [];
             
-            const cell = document.querySelector(`[data-index="${index}"]`);
-            cell.className = `cell ${selectedTile}`;
-        }
-
-        function validatePath() {
-            if(attempts <= 0) return;
+            // 检查关键节点
+            if(!tiles[1].classList.contains('dotted')) errors.push(1);
+            if(!tiles[2].classList.contains('warning')) errors.push(2);
+            if(!tiles[6].classList.contains('dotted')) errors.push(6);
             
-            const cells = document.querySelectorAll('.cell');
-            let correct = true;
-            
-            cells.forEach((cell, i) => {
-                const expected = solution[i];
-                const actual = cell.className.includes(expected);
-                
-                if(!actual && i>0 && i<7) {
-                    correct = false;
-                    cell.style.border = "2px solid red";
-                }
-            });
-
-            if(correct) {
-                alert("恭喜！正确铺设盲道！");
+            // 显示专业提示
+            if(errors.length > 0){
+                showAlert(`错误位置：${errors.join(',')}号砖`);
+                decreaseAttempt();
             } else {
-                attempts--;
-                document.getElementById('attempts').textContent = attempts;
-                
-                if(attempts === 0) {
-                    showSolution();
-                    alert("机会用尽，已显示正确答案");
-                }
+                showAlert("符合GB/T 12952-2020规范！", 'success');
             }
         }
 
-        function showSolution() {
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach((cell, i) => {
-                if(i !== 0 && i !== 7) {
-                    cell.className = `cell ${solution[i]}`;
-                    cell.classList.add('correct');
-                }
+        // 三次机会用尽后显示标准答案
+        function showAnswer() {
+            const indices = {1:'dotted', 2:'warning', 3:'striped', 
+                           4:'striped', 5:'striped', 6:'dotted'};
+            Object.entries(indices).forEach(([idx,cls]) => {
+                document.getElementsByClassName('tile')[idx].classList.add(cls);
             });
         }
-
-        // 初始化游戏
-        initGame();
     </script>
 </body>
 </html>
