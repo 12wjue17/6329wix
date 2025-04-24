@@ -3,77 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Braille Letter Spelling Practice</title>
+    <title>Braille Letter Drag and Drop</title>
     <style>
         body {
             font-family: Arial, sans-serif;
         }
         .container {
-            max-width: 600px;
-            margin: 0 auto;
-            text-align: center;
+            display: flex;
+            justify-content: space-around;
+            margin: 20px;
         }
-        input {
+        .draggable, .target {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #000;
             margin: 10px;
-            padding: 5px;
         }
-        button {
-            padding: 10px 20px;
-            cursor: pointer;
+        .draggable {
+            background-color: #f0f0f0;
+            cursor: move;
+        }
+        .target {
+            background-color: #e0e0e0;
         }
     </style>
 </head>
 <body>
-    <h1>Braille Letter Spelling Practice</h1>
-    <div class="container">
-        <p>Please enter the corresponding Braille letter:</p>
-        <input type="text" id="input-letter" placeholder="Enter letter">
-        <input type="text" id="input-braille" placeholder="Enter Braille">
-        <button onclick="checkAnswer()">Submit</button>
-        <p id="feedback"></p>
-    </div>
+    <h1>Braille Letter Drag and Drop</h1>
+    <div class="container" id="draggable-container"></div>
+    <div class="container" id="target-container"></div>
     <script>
-        const letters = {
-            'A': '⠁',
-            'B': '⠃',
-            'C': '⠉',
-            'D': '⠙',
-            'E': '⠑',
-            'F': '⠋',
-            'G': '⠛',
-            'H': '⠓',
-            'I': '⠊',
-            'J': '⠚',
-            'K': '⠅',
-            'L': '⠇',
-            'M': '⠍',
-            'N': '⠝',
-            'O': '⠕',
-            'P': '⠏',
-            'Q': '⠟',
-            'R': '⠗',
-            'S': '⠎',
-            'T': '⠞',
-            'U': '⠥',
-            'V': '⠧',
-            'W': '⠺',
-            'X': '⠭',
-            'Y': '⠽',
-            'Z': '⠵'
-        };
+        const letters = [
+            { letter: 'A', braille: '⠁' },
+            { letter: 'B', braille: '⠃' },
+            { letter: 'C', braille: '⠉' },
+            { letter: 'D', braille: '⠙' },
+            { letter: 'E', braille: '⠑' },
+            { letter: 'F', braille: '⠋' },
+            { letter: 'G', braille: '⠛' },
+            { letter: 'H', braille: '⠓' },
+            { letter: 'I', braille: '⠊' },
+            { letter: 'J', braille: '⠚' },
+            { letter: 'K', braille: '⠅' },
+            { letter: 'L', braille: '⠇' },
+            { letter: 'M', braille: '⠍' },
+            { letter: 'N', braille: '⠝' },
+            { letter: 'O', braille: '⠕' },
+            { letter: 'P', braille: '⠏' },
+            { letter: 'Q', braille: '⠟' },
+            { letter: 'R', braille: '⠗' },
+            { letter: 'S', braille: '⠎' },
+            { letter: 'T', braille: '⠞' },
+            { letter: 'U', braille: '⠥' },
+            { letter: 'V', braille: '⠧' },
+            { letter: 'W', braille: '⠺' },
+            { letter: 'X', braille: '⠭' },
+            { letter: 'Y', braille: '⠽' },
+            { letter: 'Z', braille: '⠵' }
+        ];
 
-        function checkAnswer() {
-            const inputLetter = document.getElementById('input-letter').value.toUpperCase();
-            const inputBraille = document.getElementById('input-braille').value;
-            const feedback = document.getElementById('feedback');
+        const draggableContainer = document.getElementById('draggable-container');
+        const targetContainer = document.getElementById('target-container');
 
-            if (letters[inputLetter] === inputBraille) {
-                feedback.textContent = 'Correct!';
+        letters.forEach(letter => {
+            const draggable = document.createElement('div');
+            draggable.classList.add('draggable');
+            draggable.textContent = letter.braille;
+            draggable.draggable = true;
+            draggable.dataset.letter = letter.letter;
+            draggable.dataset.braille = letter.braille;
+            draggable.addEventListener('dragstart', dragStart);
+            draggableContainer.appendChild(draggable);
+
+            const target = document.createElement('div');
+            target.classList.add('target');
+            target.textContent = letter.letter;
+            target.dataset.letter = letter.letter;
+            target.dataset.braille = letter.braille;
+            target.addEventListener('dragover', dragOver);
+            target.addEventListener('drop', drop);
+            targetContainer.appendChild(target);
+        });
+
+        function dragStart(event) {
+            event.dataTransfer.setData('text/plain', event.target.dataset.letter);
+        }
+
+        function dragOver(event) {
+            event.preventDefault();
+        }
+
+        function drop(event) {
+            const draggedLetter = event.dataTransfer.getData('text/plain');
+            const targetLetter = event.target.dataset.letter;
+            const feedback = document.createElement('p');
+
+            if (draggedLetter === targetLetter) {
+                feedback.textContent = `Correct! ${draggedLetter} matches ${event.target.dataset.braille}`;
                 feedback.style.color = 'green';
             } else {
-                feedback.textContent = `Incorrect! The Braille for ${inputLetter} is ${letters[inputLetter]}`;
+                feedback.textContent = `Incorrect! ${draggedLetter} does not match ${event.target.dataset.braille}`;
                 feedback.style.color = 'red';
             }
+
+            event.target.appendChild(feedback);
+            setTimeout(() => {
+                event.target.removeChild(feedback);
+            }, 2000);
         }
     </script>
 </body>
