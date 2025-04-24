@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h3>Say something to those suffer from blindness</h3>
+    
+    <button id="startBtn">Start</button>
+    <button id="stopBtn" disabled>Stop</button>
+    
+    <div id="audioSection" style="margin-top: 20px; display: none;">
+        <audio id="playback" controls>Your browser does not support audio playback</audio>
+        <br>
+        <a id="downloadLink">Download the recording</a>
+    </div>
+
+<script>
+let mediaRecorder;
+let audioChunks = [];
+
+// 获取用户麦克风权限
+async function startRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = event => {
+            audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = () => {
+            // 释放麦克风资源
+            stream.getTracks().forEach(track => track.stop());
+            
+            // 创建音频文件
+            const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            
+            // 显示回放和下载
+            const audioPlayer = document.getElementById('playback');
+            const downloadLink = document.getElementById('downloadLink');
+            
+            audioPlayer.src = audioUrl;
+            downloadLink.href = audioUrl;
+            downloadLink.download = `recording_${Date.now()}.${getFileExtension()}`;
+            document.getElementById('audioSection').style.display = 'block';
+        };
+
+        mediaRecorder.start();
+        toggleButtons(true);
+    } catch (err) {
+        alert('需要麦克风权限才能录音: ' + err);
+    }
+}
+
+// 获取文件扩展名
+function getFileExtension() {
+    const mimeType = mediaRecorder.mimeType.split(';')[0];
+    return mimeType.split('/')[1];
+}
+
+// 按钮状态切换
+function toggleButtons(isRecording) {
+    document.getElementById('startBtn').disabled = isRecording;
+    document.getElementById('stopBtn').disabled = !isRecording;
+}
+
+// 事件绑定
+document.getElementById('startBtn').addEventListener('click', startRecording);
+document.getElementById('stopBtn').addEventListener('click', () => {
+    mediaRecorder.stop();
+    toggleButtons(false);
+    audioChunks = [];
+});
+</script>
+
+<style>
+    button {
+        padding: 10px 20px;
+        margin: 5px;
+        cursor: pointer;
+    }
+    #downloadLink {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 5px 10px;
+        background: #4CAF50;
+        color: white;
+        text-decoration: none;
+        border-radius: 3px;
+    }
+</style>
+</body>
+</html>
