@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>可缩放思维导图</title>
+    <title>mindmap</title>
     <style>
         .container {
             width: 100%;
@@ -31,14 +31,14 @@
 </head>
 <body>
     <div class="controls">
-        <button onclick="zoomIn()">放大</button>
-        <button onclick="zoomOut()">缩小</button>
-        <button onclick="reset()">重置</button>
+        <button onclick="zoomIn()">zoomin</button>
+        <button onclick="zoomOut()">zoomout</button>
+        <button onclick="reset()">reset</button>
     </div>
     
     <div class="container">
         <!-- 替换成你的思维导图文件路径 -->
-        <img id="mindmap" src="your-mindmap.svg" alt="思维导图">
+        <img id="mindmap" src="youtube.png" alt="mindmap">
     </div>
 
     <script>
