@@ -95,28 +95,27 @@
 <body>
     <div class="container">
         <div class="button-group">
-            <button id="barBtn" class="active">条形砖 (纵向)</button>
-            <button id="dotBtn">圆点砖 (横向)</button>
+            <button id="barBtn" class="active">Bar Tiles (Vertical)</button>
+            <button id="dotBtn">Dot Tiles (Horizontal)</button>
         </div>
         
         <div class="t-grid">
-            <!-- 纵向部分 -->
+            <!-- Vertical Part -->
             <div class="tile" data-type="vertical" style="grid-column: 2; grid-row: 4"></div>
             <div class="tile" data-type="vertical" style="grid-column: 2; grid-row: 3"></div>
             <div class="tile" data-type="vertical" style="grid-column: 2; grid-row: 2"></div>
-           
             
-            <!-- 横向部分 -->
+            <!-- Horizontal Part -->
             <div class="tile" data-type="horizontal" style="grid-column: 1; grid-row: 1"></div>
             <div class="tile" data-type="horizontal" style="grid-column: 2; grid-row: 1"></div>
             <div class="tile" data-type="horizontal" style="grid-column: 3; grid-row: 1"></div>
             
             <div class="walker">🚶</div>
-            <div class="street-label">══════ 斑马线 ══════</div>
+            <div class="street-label">══════ Zebra Crossing ══════</div>
         </div>
 
         <div id="feedback"></div>
-        <button onclick="validate()" style="margin-top: 1rem; width: 100%">验证方案</button>
+        <button onclick="validate()" style="margin-top: 1rem; width: 100%">Validate Solution</button>
     </div>
 
     <script>
@@ -158,10 +157,10 @@
 
             const feedback = document.getElementById('feedback');
             if (errors.length === 0) {
-                feedback.textContent = "✓ 完全符合规范！GB/T 12952-2020";
+                feedback.textContent = "✓ Fully compliant with standards! GB/T 12952-2020";
                 feedback.style.color = '#28a745';
             } else {
-                feedback.textContent = `发现 ${errors.length} 处不符合规范要求`;
+                feedback.textContent = `Found ${errors.length} non-compliant areas`;
                 feedback.style.color = '#dc3545';
             }
         }
