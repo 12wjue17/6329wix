@@ -1,164 +1,172 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <title>Tactile Navigation Challenge</title>
     <style>
         .game-container {
             display: grid;
-            grid-template-columns: repeat(8, 60px);
+            grid-template-columns: repeat(8, 50px);
             gap: 2px;
             margin: 20px;
         }
         .cell {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             border: 1px solid #ccc;
             position: relative;
-            transition: transform 0.2s;
+            background: #f0f0f0;
         }
-        .tile-selector {
-            display: flex;
-            gap: 15px;
-            margin: 20px;
+        .circular {
+            background: #ffd700 radial-gradient(circle at 50% 50%, #666 15%, transparent 20%);
         }
-        .tile-btn {
-            padding: 10px 20px;
-            border: 4px solid transparent;
-            transition: all 0.3s;
+        .striped {
+            background: #4682b4 repeating-linear-gradient(45deg, #fff, #fff 5px, #4682b4 5px, #4682b4 10px);
         }
-        .selected-tile {
-            border-color: #ff6b6b;
-            transform: scale(1.1);
+        .start-point::after {
+            content: "🚶";
+            font-size: 30px;
+            position: absolute;
+            bottom: -5px;
         }
-        .shape-indicator {
-            width: 30px;
-            height: 30px;
-            margin: 5px auto;
+        .end-point::after {
+            content: "🚩";
+            font-size: 30px;
+            position: absolute;
+            top: -10px;
+            right: -5px;
         }
-        .circular-indicator {
-            background: #f9ca24;
-            border-radius: 50%;
-        }
-        .striped-indicator {
-            background: repeating-linear-gradient(
-                45deg,
-                #54a0ff,
-                #54a0ff 5px,
-                #ffffff 5px,
-                #ffffff 10px
-            );
-        }
-        .feedback {
+        .attempts {
+            color: #ff4444;
             font-weight: bold;
             margin: 10px;
-            padding: 10px;
-            border-radius: 5px;
         }
-        .success { background: #d1f7d3; color: #2ecc71; }
-        .error { background: #ffe3e3; color: #e74c3c; }
-        .rules-section {
-            background: #f8f9fa;
-            padding: 20px;
-            margin: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .solution {
+            background: #90EE90 !important;
         }
     </style>
 </head>
 <body>
-    <div class="rules-section">
-        <h2>🚦 Game Rules</h2>
-        <ol>
-            <li>🔵 Circular tiles indicate straight paths</li>
-            <li>🔶 Striped tiles mark direction changes</li>
-            <li>🚶 Path must connect start to end continuously</li>
-            <li>↩️ Use striped tiles before turns</li>
-            <li>🎯 Endpoint must be circular tile</li>
-        </ol>
+    <h2>🚦 Game Rules</h2>
+    <div>
+        <p>🔵 Use CIRCULAR tiles for straight paths</p>
+        <p>🔶 Use STRIPED tiles before turns</p>
+        <p>🚶 Connect START to 🚩 END with continuous path</p>
+        <p>❌ 3 attempts per scene</p>
     </div>
 
-    <div class="scenario-control">
-        <button onclick="loadScenario(1)">Scene 1: Straight Path</button>
-        <button onclick="loadScenario(2)">Scene 2: L-shaped Turn</button>
+    <div class="attempts">Attempts left: <span id="attempts">3</span></div>
+    
+    <button onclick="switchScene(0)">Scene 1: Straight Path</button>
+    <button onclick="switchScene(1)">Scene 2: L-shaped Turn</button>
+    
+    <div class="button-group">
+        <button onclick="selectTile('circular')">Circular Tile</button>
+        <button onclick="selectTile('striped')">Striped Tile</button>
     </div>
 
-    <div class="tile-selector">
-        <button class="tile-btn" onclick="selectTile('circular')">
-            <div class="shape-indicator circular-indicator"></div>
-            Circular Tile
-        </button>
-        <button class="tile-btn" onclick="selectTile('striped')">
-            <div class="shape-indicator striped-indicator"></div>
-            Striped Tile
-        </button>
-    </div>
-
-    <div id="game-container" class="game-container"></div>
-    <button onclick="validatePath()" style="margin:20px">Check Solution</button>
-    <div id="feedback"></div>
+    <div class="game-container" id="grid"></div>
+    <button onclick="validatePath()">Check Solution</button>
 
     <script>
-        const solutions = {
-            1: ['circular','circular','circular','circular','circular','circular','circular','circular'],
-            2: ['striped','circular','circular',null,null,'striped','circular','circular']
-        };
-
-        let currentScene = 1;
+        let currentScene = 0;
         let selectedTile = null;
-        let currentState = [];
+        let attempts = 3;
+        const scenes = [
+            {
+                start: [0, 3],
+                end: [7, 3],
+                solution: [[0,3],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3]]
+            },
+            {
+                start: [0, 3],
+                end: [7, 7],
+                solution: [[0,3],[1,3],[2,3],[3,3],[3,4],[3,5],[3,6],[3,7],[4,7],[5,7],[6,7],[7,7]]
+            }
+        ];
 
-        function loadScenario(sceneNum) {
-            currentScene = sceneNum;
-            currentState = new Array(8).fill(null);
-            renderGrid();
-        }
-
-        function renderGrid() {
-            const container = document.getElementById('game-container');
-            container.innerHTML = '';
+        function initGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
             
-            currentState.forEach((tile, index) => {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                if (tile) cell.style.background = tile === 'circular' ? '#f9ca24' : '#54a0ff';
-                cell.onclick = () => placeTile(index);
-                container.appendChild(cell);
-            });
+            for(let y=0; y<8; y++) {
+                for(let x=0; x<8; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    if(x === scenes[currentScene].start[0] && y === scenes[currentScene].start[1]) {
+                        cell.classList.add('start-point');
+                    }
+                    if(x === scenes[currentScene].end[0] && y === scenes[currentScene].end[1]) {
+                        cell.classList.add('end-point');
+                    }
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    cell.onclick = () => placeTile(x, y);
+                    grid.appendChild(cell);
+                }
+            }
         }
 
         function selectTile(type) {
             selectedTile = type;
-            document.querySelectorAll('.tile-btn').forEach(btn => 
-                btn.classList.remove('selected-tile'));
-            event.target.classList.add('selected-tile');
+            document.querySelectorAll('.button-group button').forEach(btn => 
+                btn.style.backgroundColor = btn.innerText.includes(type) ? '#ddd' : ''
+            );
         }
 
-        function placeTile(index) {
-            if (!selectedTile) return;
-            currentState[index] = selectedTile;
-            renderGrid();
+        function placeTile(x, y) {
+            if(!selectedTile) return;
+            const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+            if(cell.classList.contains('start-point') || cell.classList.contains('end-point')) return;
+            
+            cell.className = `cell ${selectedTile}`;
         }
 
         function validatePath() {
-            const feedback = document.getElementById('feedback');
-            const isValid = currentState.every((tile, i) => 
-                tile === solutions[currentScene][i]);
+            if(attempts <= 0) return;
             
-            if (isValid) {
-                feedback.className = 'feedback success';
-                feedback.innerHTML = '✅ Perfect! Accessible path created!';
+            attempts--;
+            document.getElementById('attempts').textContent = attempts;
+            
+            const solution = scenes[currentScene].solution;
+            const cells = Array.from(document.querySelectorAll('.cell'));
+            let isValid = true;
+
+            cells.forEach(cell => {
+                const x = parseInt(cell.dataset.x);
+                const y = parseInt(cell.dataset.y);
+                const isSolution = solution.some(pos => pos[0] === x && pos[1] === y);
+                
+                if(isSolution) {
+                    const correctType = solution.indexOf([x,y]) === solution.length-1 ? 'circular' : 
+                                      solution[0][0] !== solution[1][0] ? 'striped' : 'circular';
+                    
+                    if(!cell.classList.contains(correctType)) isValid = false;
+                }
+            });
+
+            if(!isValid) {
+                alert(`Path invalid! ${attempts} attempts remaining`);
+                if(attempts === 0) showSolution();
             } else {
-                feedback.className = 'feedback error';
-                feedback.innerHTML = '⚠️ Path issues detected:<br>'
-                    + '• Verify turn indicators<br>'
-                    + '• Check path connection<br>'
-                    + '• Confirm endpoint type';
+                alert("Congratulations! Path is accessible!");
             }
         }
 
-        // Initialize first scenario
-        loadScenario(1);
+        function showSolution() {
+            scenes[currentScene].solution.forEach(([x,y]) => {
+                const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+                cell.classList.add('solution');
+            });
+        }
+
+        function switchScene(index) {
+            currentScene = index;
+            attempts = 3;
+            document.getElementById('attempts').textContent = 3;
+            initGrid();
+        }
+
+        initGrid();
     </script>
 </body>
 </html>
