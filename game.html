@@ -2,148 +2,167 @@
 <html>
 <head>
     <style>
-        .container {
+        body {
             display: flex;
             flex-direction: column;
             align-items: center;
+            background: #f0f3f5;
             font-family: Arial, sans-serif;
         }
-        
-        #paving-grid {
+
+        .container {
+            position: relative;
+            margin: 2rem;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+            justify-content: center;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: 2px solid #007bff;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .t-grid {
             display: grid;
-            grid-template-columns: repeat(5, 60px);
-            gap: 5px;
-            margin: 20px;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(5, 80px);
+            gap: 4px;
+            position: relative;
         }
 
         .tile {
-            width: 60px;
-            height: 60px;
-            border: 2px solid #666;
+            background: #e9ecef;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
             cursor: pointer;
-            transition: transform 0.2s;
-            background: #eee;
+            transition: all 0.2s;
         }
 
-        .tile:hover {
-            transform: scale(1.1);
+        .tile.bar {
+            background: linear-gradient(45deg, #ffd700, #ffc107);
+            border-color: #ff9800;
         }
 
-        .bar-pattern {
-            background: repeating-linear-gradient(
-                90deg,
-                #ffd700 0px,
-                #ffd700 10px,
-                transparent 10px,
-                transparent 20px
-            );
+        .tile.dot {
+            background: radial-gradient(circle at 50% 30%, #42a5f5, #1976d2);
+            border-color: #1565c0;
         }
 
-        .dot-pattern {
-            background: radial-gradient(circle at 50% 50%, 
-                #0066cc 25%, transparent 26%);
-            background-size: 20px 20px;
+        .walker {
+            grid-column: 2;
+            grid-row: 5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            font-size: 24px;
         }
 
-        .road-area {
-            background: #444;
-            grid-column: 1 / 6;
-            height: 30px;
-        }
-
-        #mode-buttons {
-            margin: 10px;
-        }
-
-        .mode-btn {
-            padding: 10px;
-            margin: 5px;
-            border: 5px solid transparent;
-        }
-
-        .selected-mode {
-            border-color: #00cc00;
+        .street-label {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #6c757d;
+            font-size: 0.9em;
         }
 
         #feedback {
-            height: 30px;
+            text-align: center;
+            margin-top: 1rem;
+            min-height: 24px;
             font-weight: bold;
-            color: green;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div id="mode-buttons">
-            <button class="mode-btn selected-mode" onclick="selectMode('bar')">Bar Pattern</button>
-            <button class="mode-btn" onclick="selectMode('dot')">Dot Pattern</button>
+        <div class="button-group">
+            <button id="barBtn" class="active">条形砖 (纵向)</button>
+            <button id="dotBtn">圆点砖 (横向)</button>
         </div>
-
-        <div id="paving-grid">
-            <!-- Road area -->
-            <div class="road-area"></div>
+        
+        <div class="t-grid">
+            <!-- 纵向部分 -->
+            <div class="tile" data-type="vertical" style="grid-column: 2; grid-row: 4"></div>
+            <div class="tile" data-type="vertical" style="grid-column: 2; grid-row: 3"></div>
+            <div class="tile" data-type="vertical" style="grid-column: 2; grid-row: 2"></div>
+            <div class="tile" data-type="vertical" style="grid-column: 2; grid-row: 1"></div>
             
-            <!-- Vertical path -->
-            <div class="tile start-point">🚶</div>
-            <div class="tile"></div>
-            <div class="tile"></div>
-            <div class="tile"></div>
+            <!-- 横向部分 -->
+            <div class="tile" data-type="horizontal" style="grid-column: 1; grid-row: 1"></div>
+            <div class="tile" data-type="horizontal" style="grid-column: 2; grid-row: 1"></div>
+            <div class="tile" data-type="horizontal" style="grid-column: 3; grid-row: 1"></div>
             
-            <!-- Horizontal path -->
-            <div class="tile"></div>
-            <div class="tile"></div>
-            <div class="tile"></div>
+            <div class="walker">🚶</div>
+            <div class="street-label">══════ 斑马线 ══════</div>
         </div>
 
         <div id="feedback"></div>
-        <button onclick="validateSolution()">Validate Solution</button>
+        <button onclick="validate()" style="margin-top: 1rem; width: 100%">验证方案</button>
     </div>
 
     <script>
         let currentMode = 'bar';
-        const tiles = document.querySelectorAll('.tile');
-        
-        function selectMode(mode) {
+        const barBtn = document.getElementById('barBtn');
+        const dotBtn = document.getElementById('dotBtn');
+        barBtn.addEventListener('click', () => setMode('bar'));
+        dotBtn.addEventListener('click', () => setMode('dot'));
+
+        function setMode(mode) {
             currentMode = mode;
-            document.querySelectorAll('.mode-btn').forEach(btn => {
-                btn.classList.toggle('selected-mode', btn.textContent.includes(mode));
-            });
+            barBtn.classList.toggle('active', mode === 'bar');
+            dotBtn.classList.toggle('active', mode === 'dot');
         }
 
-        tiles.forEach(tile => {
-            if(!tile.classList.contains('start-point')) {
-                tile.onclick = () => {
-                    tile.classList.remove('bar-pattern', 'dot-pattern');
-                    if(currentMode === 'bar') {
-                        tile.classList.add('bar-pattern');
-                    } else {
-                        tile.classList.add('dot-pattern');
-                    }
-                };
-            }
+        document.querySelectorAll('.tile').forEach(tile => {
+            tile.addEventListener('click', () => {
+                const isValid = tile.dataset.type === (currentMode === 'bar' ? 'vertical' : 'horizontal');
+                if (isValid) {
+                    tile.className = 'tile ' + (currentMode === 'bar' ? 'bar' : 'dot');
+                } else {
+                    tile.style.transform = 'scale(0.9)';
+                    setTimeout(() => tile.style.transform = '', 300);
+                }
+            });
         });
 
-        function validateSolution() {
-            const correctBars = [1,2,3,4]; // Vertical tiles
-            const correctDots = [5,6,7];   // Horizontal tiles
-            let errors = 0;
-
-            tiles.forEach((tile, index) => {
-                if(correctBars.includes(index) && !tile.classList.contains('bar-pattern')) {
-                    errors++;
-                }
-                if(correctDots.includes(index) && !tile.classList.contains('dot-pattern')) {
-                    errors++;
+        function validate() {
+            const errors = [];
+            document.querySelectorAll('.tile').forEach(tile => {
+                const shouldBeBar = tile.dataset.type === 'vertical';
+                const isCorrect = (shouldBeBar && tile.classList.contains('bar')) || 
+                (!shouldBeBar && tile.classList.contains('dot'));
+                if (!isCorrect) {
+                    errors.push(tile);
+                    tile.style.borderColor = '#dc3545';
                 }
             });
 
             const feedback = document.getElementById('feedback');
-            if(errors === 0) {
-                feedback.textContent = "✓ Correct! Proper tactile paving applied";
-                feedback.style.color = 'green';
+            if (errors.length === 0) {
+                feedback.textContent = "✓ 完全符合规范！GB/T 12952-2020";
+                feedback.style.color = '#28a745';
             } else {
-                feedback.textContent = `✗ ${errors} errors found. Check patterns`;
-                feedback.style.color = 'red';
+                feedback.textContent = `发现 ${errors.length} 处不符合规范要求`;
+                feedback.style.color = '#dc3545';
             }
         }
     </script>
