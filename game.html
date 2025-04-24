@@ -2,167 +2,101 @@
 <html>
 <head>
     <style>
-        .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            background: #f0f0f0;
-            font-family: Arial, sans-serif;
+        .container { text-align: center; margin: 20px auto; max-width: 800px; }
+        .test-section { margin: 20px; padding: 15px; border: 2px solid #4CAF50; border-radius: 8px; }
+        .road { background: #666; padding: 20px; display: inline-block; position: relative; }
+        .tile { 
+            width: 60px; height: 60px; 
+            margin: 2px; display: inline-block;
+            cursor: pointer; transition: all 0.3s;
+            background: #ddd; 
         }
-
-        .road {
-            background: #555;
-            width: 300px;
-            height: 50px;
-            margin: 20px 0;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        .vertical { background: linear-gradient(90deg, #FFD700 40%, #FFE55C 60%); }
+        .horizontal { background: radial-gradient(circle, #0066cc 25%, #004c99 75%); }
+        .selected { transform: scale(1.1); box-shadow: 0 0 8px rgba(0,0,0,0.3); }
+        .error { animation: shake 0.5s; border: 2px solid red; }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
-
-        .grid {
-            display: grid;
-            gap: 5px;
-            position: relative;
-        }
-
-        .tile {
-            width: 50px;
-            height: 50px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: #fff;
-        }
-
-        .tile:hover {
-            transform: scale(1.1);
-            z-index: 2;
-        }
-
-        .bar {
-            background: repeating-linear-gradient(
-                90deg,
-                #FFD700 0px,
-                #FFD700 10px,
-                transparent 10px,
-                transparent 20px
-            );
-        }
-
-        .dot {
-            background: radial-gradient(circle at 50% 50%, 
-                #1E90FF 25%, 
-                transparent 25%);
-        }
-
-        .start {
-            background: #90EE90;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-        }
-
-        .attempts {
-            margin: 20px;
-            font-weight: bold;
-            color: #333;
-        }
+        #startPoint { background: #4CAF50; cursor: default; }
+        #validation { margin-top: 20px; padding: 10px 20px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="road"></div>
-        <div class="grid">
-            <!-- 横向部分 (3块) -->
-            <div class="tile" style="grid-column: 2; grid-row: 1"></div>
-            <div class="tile" style="grid-column: 3; grid-row: 1"></div>
-            <div class="tile" style="grid-column: 4; grid-row: 1"></div>
-            
-            <!-- 纵向部分 (4块) -->
-            <div class="tile start" style="grid-column: 3; grid-row: 5">🚶</div>
-            <div class="tile" style="grid-column: 3; grid-row: 4"></div>
-            <div class="tile" style="grid-column: 3; grid-row: 3"></div>
-            <div class="tile" style="grid-column: 3; grid-row: 2"></div>
+        <div class="test-section">
+            <h3>Tactile Paving Knowledge Test</h3>
+            <p>1. The directional guidance tiles with longitudinal bars are used for:</p>
+            <label><input type="radio" name="q1" value="wrong"> Indicating hazards</label>
+            <label><input type="radio" name="q1" value="correct"> Guiding straight path</label>
+
+            <p>2. Warning tiles with truncated domes are used for:</p>
+            <label><input type="radio" name="q2" value="wrong"> Continuous guidance</label>
+            <label><input type="radio" name="q2" value="correct"> Alerting to hazards</label>
         </div>
-        
-        <div class="attempts">剩余机会：3</div>
+
+        <div class="road">
+            <!-- Vertical path -->
+            <div class="tile vertical" id="startPoint">🚶</div><br>
+            <div class="tile"></div><br>
+            <div class="tile"></div><br>
+            <div class="tile"></div><br>
+            
+            <!-- Horizontal path -->
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+        </div>
+
         <div>
-            <button onclick="checkSolution()">验证方案</button>
-            <button onclick="reset()">重置</button>
+            <p>Remaining attempts: <span id="attempts">3</span></p>
+            <button id="validateBtn" onclick="validate()">Validate Solution</button>
+            <button onclick="reset()">Reset</button>
         </div>
     </div>
 
     <script>
         let attempts = 3;
-        const correctTiles = {
-            '2-1': 'dot',
-            '3-1': 'dot', 
-            '4-1': 'dot',
-            '3-2': 'bar',
-            '3-3': 'bar',
-            '3-4': 'bar',
-            '3-5': 'bar'
-        };
-
+        const correctVertical = 3; // Number of vertical tiles
+        const correctHorizontal = 3; // Number of horizontal tiles
+        
         document.querySelectorAll('.tile').forEach(tile => {
-            tile.addEventListener('click', function() {
-                if (this.classList.contains('start')) return;
-                
-                this.classList.toggle('bar');
-                if (!this.classList.contains('bar')) {
-                    this.classList.toggle('dot');
-                }
-            });
+            if(tile.id !== 'startPoint') {
+                tile.addEventListener('click', function() {
+                    this.classList.toggle('vertical');
+                    this.classList.toggle('horizontal');
+                    this.classList.add('selected');
+                });
+            }
         });
 
-        function checkSolution() {
-            let correct = true;
-            document.querySelectorAll('.tile').forEach(tile => {
-                const col = tile.style.gridColumn;
-                const row = tile.style.gridRow;
-                const key = `${col}-${row}`;
-                
-                if (correctTiles[key]) {
-                    const shouldBe = correctTiles[key];
-                    const isCorrect = tile.classList.contains(shouldBe);
-                    if (!isCorrect) correct = false;
-                }
-            });
+        function validate() {
+            let verticalCount = document.querySelectorAll('.vertical').length - 1; // Exclude start point
+            let horizontalCount = document.querySelectorAll('.horizontal').length;
 
-            if (!correct) {
-                attempts--;
-                document.querySelector('.attempts').textContent = `剩余机会：${attempts}`;
-                if (attempts <= 0) showAnswer();
+            if(verticalCount === correctVertical && horizontalCount === correctHorizontal) {
+                alert("Correct! Complies with ISO 23599:2019 standards");
             } else {
-                alert('正确！符合盲道规范！');
+                attempts--;
+                document.getElementById('attempts').textContent = attempts;
+                document.querySelectorAll('.tile').forEach(t => t.classList.add('error'));
+                if(attempts <= 0) showSolution();
             }
         }
 
-        function showAnswer() {
-            document.querySelectorAll('.tile').forEach(tile => {
-                const col = tile.style.gridColumn;
-                const row = tile.style.gridRow;
-                const key = `${col}-${row}`;
-                
-                if (correctTiles[key]) {
-                    tile.classList.add(correctTiles[key]);
-                    tile.style.opacity = '0.6';
-                    tile.style.pointerEvents = 'none';
-                }
+        function showSolution() {
+            document.querySelectorAll('.tile').forEach((tile, index) => {
+                if(index > 0 && index <= 3) tile.classList.add('vertical');
+                if(index > 4) tile.classList.add('horizontal');
+                tile.style.opacity = '0.5';
+                tile.style.cursor = 'not-allowed';
             });
         }
 
         function reset() {
-            attempts = 3;
-            document.querySelector('.attempts').textContent = '剩余机会：3';
-            document.querySelectorAll('.tile').forEach(tile => {
-                tile.classList.remove('bar', 'dot');
-                tile.style.opacity = '1';
-                tile.style.pointerEvents = 'auto';
-            });
+            location.reload();
         }
     </script>
 </body>
