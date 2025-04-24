@@ -2,47 +2,92 @@
 <html>
 <head>
     <style>
-        .container { text-align: center; margin: 20px auto; max-width: 800px; }
-        .test-section { margin: 20px; padding: 15px; border: 2px solid #4CAF50; border-radius: 8px; }
-        .road { background: #666; padding: 20px; display: inline-block; position: relative; }
-        .tile { 
-            width: 60px; height: 60px; 
-            margin: 2px; display: inline-block;
-            cursor: pointer; transition: all 0.3s;
-            background: #ddd; 
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
         }
-        .vertical { background: linear-gradient(90deg, #FFD700 40%, #FFE55C 60%); }
-        .horizontal { background: radial-gradient(circle, #0066cc 25%, #004c99 75%); }
-        .selected { transform: scale(1.1); box-shadow: 0 0 8px rgba(0,0,0,0.3); }
-        .error { animation: shake 0.5s; border: 2px solid red; }
-        @keyframes shake {
-            0%,100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+        
+        #paving-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 60px);
+            gap: 5px;
+            margin: 20px;
         }
-        #startPoint { background: #4CAF50; cursor: default; }
-        #validation { margin-top: 20px; padding: 10px 20px; }
+
+        .tile {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #666;
+            cursor: pointer;
+            transition: transform 0.2s;
+            background: #eee;
+        }
+
+        .tile:hover {
+            transform: scale(1.1);
+        }
+
+        .bar-pattern {
+            background: repeating-linear-gradient(
+                90deg,
+                #ffd700 0px,
+                #ffd700 10px,
+                transparent 10px,
+                transparent 20px
+            );
+        }
+
+        .dot-pattern {
+            background: radial-gradient(circle at 50% 50%, 
+                #0066cc 25%, transparent 26%);
+            background-size: 20px 20px;
+        }
+
+        .road-area {
+            background: #444;
+            grid-column: 1 / 6;
+            height: 30px;
+        }
+
+        #mode-buttons {
+            margin: 10px;
+        }
+
+        .mode-btn {
+            padding: 10px;
+            margin: 5px;
+            border: 5px solid transparent;
+        }
+
+        .selected-mode {
+            border-color: #00cc00;
+        }
+
+        #feedback {
+            height: 30px;
+            font-weight: bold;
+            color: green;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="test-section">
-            <h3>Tactile Paving Knowledge Test</h3>
-            <p>1. The directional guidance tiles with longitudinal bars are used for:</p>
-            <label><input type="radio" name="q1" value="wrong"> Indicating hazards</label>
-            <label><input type="radio" name="q1" value="correct"> Guiding straight path</label>
-
-            <p>2. Warning tiles with truncated domes are used for:</p>
-            <label><input type="radio" name="q2" value="wrong"> Continuous guidance</label>
-            <label><input type="radio" name="q2" value="correct"> Alerting to hazards</label>
+        <div id="mode-buttons">
+            <button class="mode-btn selected-mode" onclick="selectMode('bar')">Bar Pattern</button>
+            <button class="mode-btn" onclick="selectMode('dot')">Dot Pattern</button>
         </div>
 
-        <div class="road">
+        <div id="paving-grid">
+            <!-- Road area -->
+            <div class="road-area"></div>
+            
             <!-- Vertical path -->
-            <div class="tile vertical" id="startPoint">🚶</div><br>
-            <div class="tile"></div><br>
-            <div class="tile"></div><br>
-            <div class="tile"></div><br>
+            <div class="tile start-point">🚶</div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
             
             <!-- Horizontal path -->
             <div class="tile"></div>
@@ -50,53 +95,56 @@
             <div class="tile"></div>
         </div>
 
-        <div>
-            <p>Remaining attempts: <span id="attempts">3</span></p>
-            <button id="validateBtn" onclick="validate()">Validate Solution</button>
-            <button onclick="reset()">Reset</button>
-        </div>
+        <div id="feedback"></div>
+        <button onclick="validateSolution()">Validate Solution</button>
     </div>
 
     <script>
-        let attempts = 3;
-        const correctVertical = 3; // Number of vertical tiles
-        const correctHorizontal = 3; // Number of horizontal tiles
+        let currentMode = 'bar';
+        const tiles = document.querySelectorAll('.tile');
         
-        document.querySelectorAll('.tile').forEach(tile => {
-            if(tile.id !== 'startPoint') {
-                tile.addEventListener('click', function() {
-                    this.classList.toggle('vertical');
-                    this.classList.toggle('horizontal');
-                    this.classList.add('selected');
-                });
-            }
-        });
-
-        function validate() {
-            let verticalCount = document.querySelectorAll('.vertical').length - 1; // Exclude start point
-            let horizontalCount = document.querySelectorAll('.horizontal').length;
-
-            if(verticalCount === correctVertical && horizontalCount === correctHorizontal) {
-                alert("Correct! Complies with ISO 23599:2019 standards");
-            } else {
-                attempts--;
-                document.getElementById('attempts').textContent = attempts;
-                document.querySelectorAll('.tile').forEach(t => t.classList.add('error'));
-                if(attempts <= 0) showSolution();
-            }
-        }
-
-        function showSolution() {
-            document.querySelectorAll('.tile').forEach((tile, index) => {
-                if(index > 0 && index <= 3) tile.classList.add('vertical');
-                if(index > 4) tile.classList.add('horizontal');
-                tile.style.opacity = '0.5';
-                tile.style.cursor = 'not-allowed';
+        function selectMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('selected-mode', btn.textContent.includes(mode));
             });
         }
 
-        function reset() {
-            location.reload();
+        tiles.forEach(tile => {
+            if(!tile.classList.contains('start-point')) {
+                tile.onclick = () => {
+                    tile.classList.remove('bar-pattern', 'dot-pattern');
+                    if(currentMode === 'bar') {
+                        tile.classList.add('bar-pattern');
+                    } else {
+                        tile.classList.add('dot-pattern');
+                    }
+                };
+            }
+        });
+
+        function validateSolution() {
+            const correctBars = [1,2,3,4]; // Vertical tiles
+            const correctDots = [5,6,7];   // Horizontal tiles
+            let errors = 0;
+
+            tiles.forEach((tile, index) => {
+                if(correctBars.includes(index) && !tile.classList.contains('bar-pattern')) {
+                    errors++;
+                }
+                if(correctDots.includes(index) && !tile.classList.contains('dot-pattern')) {
+                    errors++;
+                }
+            });
+
+            const feedback = document.getElementById('feedback');
+            if(errors === 0) {
+                feedback.textContent = "✓ Correct! Proper tactile paving applied";
+                feedback.style.color = 'green';
+            } else {
+                feedback.textContent = `✗ ${errors} errors found. Check patterns`;
+                feedback.style.color = 'red';
+            }
         }
     </script>
 </body>
