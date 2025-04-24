@@ -1,165 +1,169 @@
-<div class="game-container">
-  <!-- 知识测试 -->
-  <div class="quiz-section">
-    <h3>盲道知识测试</h3>
-    <div class="question">
-      <p>1. 行进盲道砖的凸起类型是？</p>
-      <div class="options">
-        <button class="option" data-correct="true">条状凸起</button>
-        <button class="option">圆点凸起</button>
-      </div>
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        .road {
+            background: #555;
+            width: 300px;
+            height: 50px;
+            margin: 20px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .grid {
+            display: grid;
+            gap: 5px;
+            position: relative;
+        }
+
+        .tile {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+        }
+
+        .tile:hover {
+            transform: scale(1.1);
+            z-index: 2;
+        }
+
+        .bar {
+            background: repeating-linear-gradient(
+                90deg,
+                #FFD700 0px,
+                #FFD700 10px,
+                transparent 10px,
+                transparent 20px
+            );
+        }
+
+        .dot {
+            background: radial-gradient(circle at 50% 50%, 
+                #1E90FF 25%, 
+                transparent 25%);
+        }
+
+        .start {
+            background: #90EE90;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+        }
+
+        .attempts {
+            margin: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="road"></div>
+        <div class="grid">
+            <!-- 横向部分 (3块) -->
+            <div class="tile" style="grid-column: 2; grid-row: 1"></div>
+            <div class="tile" style="grid-column: 3; grid-row: 1"></div>
+            <div class="tile" style="grid-column: 4; grid-row: 1"></div>
+            
+            <!-- 纵向部分 (4块) -->
+            <div class="tile start" style="grid-column: 3; grid-row: 5">🚶</div>
+            <div class="tile" style="grid-column: 3; grid-row: 4"></div>
+            <div class="tile" style="grid-column: 3; grid-row: 3"></div>
+            <div class="tile" style="grid-column: 3; grid-row: 2"></div>
+        </div>
+        
+        <div class="attempts">剩余机会：3</div>
+        <div>
+            <button onclick="checkSolution()">验证方案</button>
+            <button onclick="reset()">重置</button>
+        </div>
     </div>
-    <div class="question">
-      <p>2. 斑马线前应铺设什么砖？</p>
-      <div class="options">
-        <button class="option">行进盲道砖</button>
-        <button class="option" data-correct="true">提示盲道砖</button>
-      </div>
-    </div>
-  </div>
 
-  <!-- 游戏主体 -->
-  <div class="road-container">
-    <div class="sidewalk">
-      <div class="tactile-tile start-tile">🚶</div>
-      <div class="tactile-tile" data-type="directional"></div>
-      <div class="tactile-tile" data-type="directional"></div>
-      <div class="tactile-tile warning-tile"></div>
-    </div>
-    
-    <div class="crosswalk">
-      <div class="tactile-row">
-        <div class="tactile-tile prompt-tile"></div>
-        <div class="tactile-tile prompt-tile"></div>
-        <div class="tactile-tile prompt-tile"></div>
-      </div>
-      <div class="zebra-line"></div>
-    </div>
-  </div>
+    <script>
+        let attempts = 3;
+        const correctTiles = {
+            '2-1': 'dot',
+            '3-1': 'dot', 
+            '4-1': 'dot',
+            '3-2': 'bar',
+            '3-3': 'bar',
+            '3-4': 'bar',
+            '3-5': 'bar'
+        };
 
-  <!-- 操作区 -->
-  <div class="controls">
-    <div class="attempts">剩余机会: <span class="count">3</span></div>
-    <div class="tile-selector">
-      <button class="tile-option active" data-type="directional">
-        <div class="tile-preview directional"></div>
-        <span>行进砖</span>
-      </button>
-      <button class="tile-option" data-type="prompt">
-        <div class="tile-preview prompt"></div>
-        <span>提示砖</span>
-      </button>
-    </div>
-    <button class="check-btn">验证方案</button>
-  </div>
-</div>
+        document.querySelectorAll('.tile').forEach(tile => {
+            tile.addEventListener('click', function() {
+                if (this.classList.contains('start')) return;
+                
+                this.classList.toggle('bar');
+                if (!this.classList.contains('bar')) {
+                    this.classList.toggle('dot');
+                }
+            });
+        });
 
-<style>
-/* 专业配色方案 */
-:root {
-  --directional-color: #FFD700;  /* 行进砖金色 */
-  --prompt-color: #4169E1;       /* 提示砖皇室蓝 */
-  --warning-color: #FF4500;      /* 警告砖橙红色 */
-}
+        function checkSolution() {
+            let correct = true;
+            document.querySelectorAll('.tile').forEach(tile => {
+                const col = tile.style.gridColumn;
+                const row = tile.style.gridRow;
+                const key = `${col}-${row}`;
+                
+                if (correctTiles[key]) {
+                    const shouldBe = correctTiles[key];
+                    const isCorrect = tile.classList.contains(shouldBe);
+                    if (!isCorrect) correct = false;
+                }
+            });
 
-.tactile-tile {
-  /* 触感纹理实现 */
-  background: repeating-linear-gradient(
-    45deg,
-    #ffffff55,
-    #ffffff55 2px,
-    transparent 2px,
-    transparent 4px
-  );
-}
+            if (!correct) {
+                attempts--;
+                document.querySelector('.attempts').textContent = `剩余机会：${attempts}`;
+                if (attempts <= 0) showAnswer();
+            } else {
+                alert('正确！符合盲道规范！');
+            }
+        }
 
-.directional-tile {
-  background: var(--directional-color);
-  /* 条状凸起效果 */
-  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2);
-}
+        function showAnswer() {
+            document.querySelectorAll('.tile').forEach(tile => {
+                const col = tile.style.gridColumn;
+                const row = tile.style.gridRow;
+                const key = `${col}-${row}`;
+                
+                if (correctTiles[key]) {
+                    tile.classList.add(correctTiles[key]);
+                    tile.style.opacity = '0.6';
+                    tile.style.pointerEvents = 'none';
+                }
+            });
+        }
 
-.prompt-tile {
-  background: var(--prompt-color);
-  /* 圆点凸起效果 */
-  background-image: radial-gradient(
-    circle at 50% 30%,
-    #fff 15%,
-    transparent 15%
-  );
-}
-
-.warning-tile {
-  background: var(--warning-color);
-  /* 大圆点警示效果 */
-  background-image: radial-gradient(
-    circle at 50% 50%,
-    #fff 25%,
-    transparent 25%
-  );
-}
-
-/* T型布局可视化 */
-.road-container {
-  display: grid;
-  grid-template-areas:
-    "sidewalk crosswalk"
-    "warning  crosswalk";
-  gap: 10px;
-}
-
-.sidewalk {
-  grid-area: sidewalk;
-  display: flex;
-  flex-direction: column;
-}
-
-.crosswalk {
-  grid-area: crosswalk;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 斑马线细节 */
-.zebra-line {
-  background: repeating-linear-gradient(
-    to right,
-    #fff 0 30px,
-    #666 30px 60px
-  );
-  height: 8px;
-  margin: 2px 0;
-}
-</style>
-
-<script>
-// 专业验证逻辑
-function validateSolution() {
-  const requiredPattern = {
-    directional: [1, 2],    // 第2、3块为行进砖
-    warning: [3],           // 第4块为警告砖
-    prompt: [4,5,6]         // 斑马线前3块提示砖
-  };
-
-  // 检查垂直相交关系
-  const isVertical = document.querySelector('.sidewalk').style.flexDirection === 'column';
-  
-  // 机会用尽时显示正确答案
-  if(attempts <= 0) {
-    showCorrectPattern(requiredPattern);
-    return;
-  }
-}
-
-function showCorrectPattern(pattern) {
-  // 高亮显示标准铺设方案
-  pattern.directional.forEach(index => {
-    document.querySelectorAll('.tactile-tile')[index]
-      .classList.add('correct-directional');
-  });
-  
-  // 显示危险警告砖
-  document.querySelector('.warning-tile')
-    .classList.add('correct-warning');
-}
-</script>
+        function reset() {
+            attempts = 3;
+            document.querySelector('.attempts').textContent = '剩余机会：3';
+            document.querySelectorAll('.tile').forEach(tile => {
+                tile.classList.remove('bar', 'dot');
+                tile.style.opacity = '1';
+                tile.style.pointerEvents = 'auto';
+            });
+        }
+    </script>
+</body>
+</html>
