@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Braille Letter Spelling Practice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        input {
+            margin: 10px;
+            padding: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Braille Letter Spelling Practice</h1>
+    <div class="container">
+        <p>Please enter the corresponding Braille letter:</p>
+        <input type="text" id="input-letter" placeholder="Enter letter">
+        <input type="text" id="input-braille" placeholder="Enter Braille">
+        <button onclick="checkAnswer()">Submit</button>
+        <p id="feedback"></p>
+    </div>
+    <script>
+        const letters = {
+            'A': '⠁',
+            'B': '⠃',
+            'C': '⠉',
+            'D': '⠙',
+            'E': '⠑',
+            'F': '⠋',
+            'G': '⠛',
+            'H': '⠓',
+            'I': '⠊',
+            'J': '⠚',
+            'K': '⠅',
+            'L': '⠇',
+            'M': '⠍',
+            'N': '⠝',
+            'O': '⠕',
+            'P': '⠏',
+            'Q': '⠟',
+            'R': '⠗',
+            'S': '⠎',
+            'T': '⠞',
+            'U': '⠥',
+            'V': '⠧',
+            'W': '⠺',
+            'X': '⠭',
+            'Y': '⠽',
+            'Z': '⠵'
+        };
+
+        function checkAnswer() {
+            const inputLetter = document.getElementById('input-letter').value.toUpperCase();
+            const inputBraille = document.getElementById('input-braille').value;
+            const feedback = document.getElementById('feedback');
+
+            if (letters[inputLetter] === inputBraille) {
+                feedback.textContent = 'Correct!';
+                feedback.style.color = 'green';
+            } else {
+                feedback.textContent = `Incorrect! The Braille for ${inputLetter} is ${letters[inputLetter]}`;
+                feedback.style.color = 'red';
+            }
+        }
+    </script>
+</body>
+</html>
