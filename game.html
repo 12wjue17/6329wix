@@ -2,131 +2,163 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Tactile Paving Navigation Game</title>
+    <title>Tactile Navigation Challenge</title>
     <style>
         .game-container {
             display: grid;
-            grid-template-columns: repeat(5, 60px);
-            gap: 5px;
+            grid-template-columns: repeat(8, 60px);
+            gap: 2px;
             margin: 20px;
         }
-
-        .tile {
+        .cell {
             width: 60px;
             height: 60px;
             border: 1px solid #ccc;
-            cursor: pointer;
-            background-size: cover;
+            position: relative;
+            transition: transform 0.2s;
         }
-
-        .circular { background-image: url('circular.png'); }
-        .striped { background-image: url('striped.png'); }
-        .start-point { background-color: #4CAF50; }
-        .end-point { background-color: #f44336; }
-
-        #controls {
-            margin: 20px;
-            padding: 10px;
-            border: 1px solid #ddd;
-        }
-
-        .scene-btn.active {
-            background-color: #2196F3;
-            color: white;
-        }
-
         .tile-selector {
-            margin: 10px 0;
-            padding: 5px;
+            display: flex;
+            gap: 15px;
+            margin: 20px;
+        }
+        .tile-btn {
+            padding: 10px 20px;
+            border: 4px solid transparent;
+            transition: all 0.3s;
+        }
+        .selected-tile {
+            border-color: #ff6b6b;
+            transform: scale(1.1);
+        }
+        .shape-indicator {
+            width: 30px;
+            height: 30px;
+            margin: 5px auto;
+        }
+        .circular-indicator {
+            background: #f9ca24;
+            border-radius: 50%;
+        }
+        .striped-indicator {
+            background: repeating-linear-gradient(
+                45deg,
+                #54a0ff,
+                #54a0ff 5px,
+                #ffffff 5px,
+                #ffffff 10px
+            );
+        }
+        .feedback {
+            font-weight: bold;
+            margin: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success { background: #d1f7d3; color: #2ecc71; }
+        .error { background: #ffe3e3; color: #e74c3c; }
+        .rules-section {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
-    <h1>Tactile Paving Navigation Challenge</h1>
-    
-    <div id="controls">
-        <h3>Scenarios:</h3>
-        <button class="scene-btn active" onclick="switchScene(1)">Scene 1: Straight Path</button>
-        <button class="scene-btn" onclick="switchScene(2)">Scene 2: L-shaped Turn</button>
-
-        <h3>Tile Selection:</h3>
-        <button class="tile-selector" onclick="selectTile('circular')">Select Circular Tile</button>
-        <button class="tile-selector" onclick="selectTile('striped')">Select Striped Tile</button>
-
-        <button onclick="validatePath()" style="margin-top: 15px;">Validate Path</button>
-        <div id="feedback"></div>
+    <div class="rules-section">
+        <h2>🚦 Game Rules</h2>
+        <ol>
+            <li>🔵 Circular tiles indicate straight paths</li>
+            <li>🔶 Striped tiles mark direction changes</li>
+            <li>🚶 Path must connect start to end continuously</li>
+            <li>↩️ Use striped tiles before turns</li>
+            <li>🎯 Endpoint must be circular tile</li>
+        </ol>
     </div>
 
-    <div class="game-container" id="gameBoard"></div>
+    <div class="scenario-control">
+        <button onclick="loadScenario(1)">Scene 1: Straight Path</button>
+        <button onclick="loadScenario(2)">Scene 2: L-shaped Turn</button>
+    </div>
+
+    <div class="tile-selector">
+        <button class="tile-btn" onclick="selectTile('circular')">
+            <div class="shape-indicator circular-indicator"></div>
+            Circular Tile
+        </button>
+        <button class="tile-btn" onclick="selectTile('striped')">
+            <div class="shape-indicator striped-indicator"></div>
+            Striped Tile
+        </button>
+    </div>
+
+    <div id="game-container" class="game-container"></div>
+    <button onclick="validatePath()" style="margin:20px">Check Solution</button>
+    <div id="feedback"></div>
 
     <script>
-        let currentScene = 1;
-        let selectedTile = null;
         const solutions = {
-            1: ['start', 'circular', 'circular', 'circular', 'end'],
-            2: ['start', 'circular', 'striped', 'circular', 'end']
+            1: ['circular','circular','circular','circular','circular','circular','circular','circular'],
+            2: ['striped','circular','circular',null,null,'striped','circular','circular']
         };
 
-        function initializeGame() {
-            const board = document.getElementById('gameBoard');
-            board.innerHTML = '';
-            
-            // Create 5-tile path
-            for (let i = 0; i < 5; i++) {
-                const tile = document.createElement('div');
-                tile.className = 'tile' + (i === 0 ? ' start-point' : '') + (i === 4 ? ' end-point' : '');
-                tile.dataset.index = i;
-                tile.onclick = () => placeTile(i);
-                board.appendChild(tile);
-            }
+        let currentScene = 1;
+        let selectedTile = null;
+        let currentState = [];
+
+        function loadScenario(sceneNum) {
+            currentScene = sceneNum;
+            currentState = new Array(8).fill(null);
+            renderGrid();
         }
 
-        function switchScene(sceneNum) {
-            currentScene = sceneNum;
-            document.querySelectorAll('.scene-btn').forEach(btn => 
-                btn.classList.toggle('active', btn.textContent.includes(sceneNum))
-            );
-            initializeGame();
+        function renderGrid() {
+            const container = document.getElementById('game-container');
+            container.innerHTML = '';
+            
+            currentState.forEach((tile, index) => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                if (tile) cell.style.background = tile === 'circular' ? '#f9ca24' : '#54a0ff';
+                cell.onclick = () => placeTile(index);
+                container.appendChild(cell);
+            });
         }
 
         function selectTile(type) {
             selectedTile = type;
-            document.querySelectorAll('.tile-selector').forEach(btn => 
-                btn.style.backgroundColor = btn.textContent.includes(type) ? '#2196F3' : ''
-            );
+            document.querySelectorAll('.tile-btn').forEach(btn => 
+                btn.classList.remove('selected-tile'));
+            event.target.classList.add('selected-tile');
         }
 
         function placeTile(index) {
-            if (!selectedTile || index === 0 || index === 4) return;
-            
-            const tile = document.getElementsByClassName('tile')[index];
-            tile.className = `tile ${selectedTile}`;
-            tile.style.backgroundImage = `url(${selectedTile}.png)`;
+            if (!selectedTile) return;
+            currentState[index] = selectedTile;
+            renderGrid();
         }
 
         function validatePath() {
-            const tiles = document.getElementsByClassName('tile');
-            const currentPath = Array.from(tiles).map(t => {
-                if (t.classList.contains('start-point')) return 'start';
-                if (t.classList.contains('end-point')) return 'end';
-                return t.classList.contains('circular') ? 'circular' : 
-                       t.classList.contains('striped') ? 'striped' : 'empty';
-            });
-
-            const isValid = JSON.stringify(currentPath) === JSON.stringify(solutions[currentScene]);
             const feedback = document.getElementById('feedback');
+            const isValid = currentState.every((tile, i) => 
+                tile === solutions[currentScene][i]);
             
             if (isValid) {
-                feedback.textContent = "Path Correct! Complies with accessibility standards!";
-                feedback.style.color = 'green';
+                feedback.className = 'feedback success';
+                feedback.innerHTML = '✅ Perfect! Accessible path created!';
             } else {
-                feedback.textContent = "Incorrect Path! Please review tactile paving guidelines.";
-                feedback.style.color = 'red';
+                feedback.className = 'feedback error';
+                feedback.innerHTML = '⚠️ Path issues detected:<br>'
+                    + '• Verify turn indicators<br>'
+                    + '• Check path connection<br>'
+                    + '• Confirm endpoint type';
             }
         }
 
-        // Initialize first scene
-        initializeGame();
+        // Initialize first scenario
+        loadScenario(1);
     </script>
 </body>
 </html>
