@@ -1,172 +1,172 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Tactile Navigation Challenge</title>
+    <title>盲道导航挑战 - 过马路</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .quiz-section {
+            border: 2px solid #333;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
         .game-container {
             display: grid;
-            grid-template-columns: repeat(8, 50px);
-            gap: 2px;
-            margin: 20px;
+            grid-template-columns: repeat(8, 60px);
+            gap: 5px;
+            margin: 20px 0;
         }
         .cell {
-            width: 50px;
-            height: 50px;
-            border: 1px solid #ccc;
-            position: relative;
-            background: #f0f0f0;
+            width: 60px;
+            height: 60px;
+            border: 2px solid #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background-size: cover;
         }
         .circular {
-            background: #ffd700 radial-gradient(circle at 50% 50%, #666 15%, transparent 20%);
+            background: #FFD700 radial-gradient(circle at 50% 50%, #666 15%, transparent 20%);
         }
         .striped {
-            background: #4682b4 repeating-linear-gradient(45deg, #fff, #fff 5px, #4682b4 5px, #4682b4 10px);
+            background: #4682B4 repeating-linear-gradient(-45deg, 
+                transparent, 
+                transparent 10px, 
+                #fff 10px, 
+                #fff 20px);
         }
-        .start-point::after {
-            content: "🚶";
-            font-size: 30px;
-            position: absolute;
-            bottom: -5px;
-        }
-        .end-point::after {
-            content: "🚩";
-            font-size: 30px;
-            position: absolute;
-            top: -10px;
-            right: -5px;
-        }
-        .attempts {
-            color: #ff4444;
-            font-weight: bold;
-            margin: 10px;
-        }
-        .solution {
-            background: #90EE90 !important;
-        }
+        .start { background-color: #90EE90; }
+        .end { background-color: #FF6347; }
+        .correct { border: 3px solid #32CD32 !important; }
+        .selected-tile { transform: scale(1.1); }
+        button { margin: 10px; padding: 10px 20px; }
     </style>
 </head>
 <body>
-    <h2>🚦 Game Rules</h2>
+    <h1>盲道导航知识测试</h1>
+    
+    <div class="quiz-section">
+        <h3>问题1：哪种盲道砖用于指示直行？</h3>
+        <button onclick="checkQuiz(1, this)">A) 条纹砖</button>
+        <button onclick="checkQuiz(1, this)">B) 圆形凸起砖</button>
+        <p id="quiz1"></p>
+
+        <h3>问题2：哪种盲道砖用于提示方向变化？</h3>
+        <button onclick="checkQuiz(2, this)">A) 条纹砖</button>
+        <button onclick="checkQuiz(2, this)">B) 圆形凸起砖</button>
+        <p id="quiz2"></p>
+    </div>
+
+    <h1>过马路盲道铺设挑战</h1>
+    <p>剩余尝试次数：<span id="attempts">3</span></p>
+    
+    <div class="game-container" id="gameGrid"></div>
+    
     <div>
-        <p>🔵 Use CIRCULAR tiles for straight paths</p>
-        <p>🔶 Use STRIPED tiles before turns</p>
-        <p>🚶 Connect START to 🚩 END with continuous path</p>
-        <p>❌ 3 attempts per scene</p>
+        <button onclick="selectTile('circular')">圆形砖（直行）</button>
+        <button onclick="selectTile('striped')">条纹砖（转向）</button>
+        <button onclick="validatePath()">验证方案</button>
     </div>
-
-    <div class="attempts">Attempts left: <span id="attempts">3</span></div>
-    
-    <button onclick="switchScene(0)">Scene 1: Straight Path</button>
-    <button onclick="switchScene(1)">Scene 2: L-shaped Turn</button>
-    
-    <div class="button-group">
-        <button onclick="selectTile('circular')">Circular Tile</button>
-        <button onclick="selectTile('striped')">Striped Tile</button>
-    </div>
-
-    <div class="game-container" id="grid"></div>
-    <button onclick="validatePath()">Check Solution</button>
 
     <script>
-        let currentScene = 0;
         let selectedTile = null;
         let attempts = 3;
-        const scenes = [
-            {
-                start: [0, 3],
-                end: [7, 3],
-                solution: [[0,3],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3]]
-            },
-            {
-                start: [0, 3],
-                end: [7, 7],
-                solution: [[0,3],[1,3],[2,3],[3,3],[3,4],[3,5],[3,6],[3,7],[4,7],[5,7],[6,7],[7,7]]
-            }
-        ];
-
-        function initGrid() {
-            const grid = document.getElementById('grid');
+        const solution = ['start', 'circular', 'circular', 'circular', 'circular', 'circular', 'circular', 'end'];
+        
+        // 初始化游戏网格
+        function initGame() {
+            const grid = document.getElementById('gameGrid');
             grid.innerHTML = '';
             
-            for(let y=0; y<8; y++) {
-                for(let x=0; x<8; x++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    if(x === scenes[currentScene].start[0] && y === scenes[currentScene].start[1]) {
-                        cell.classList.add('start-point');
-                    }
-                    if(x === scenes[currentScene].end[0] && y === scenes[currentScene].end[1]) {
-                        cell.classList.add('end-point');
-                    }
-                    cell.dataset.x = x;
-                    cell.dataset.y = y;
-                    cell.onclick = () => placeTile(x, y);
-                    grid.appendChild(cell);
+            for(let i=0; i<8; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.index = i;
+                
+                if(i === 0) {
+                    cell.className += ' start';
+                    cell.textContent = '🚶';
+                } 
+                else if(i === 7) {
+                    cell.className += ' end';
+                    cell.textContent = '🚩';
                 }
+                
+                cell.onclick = () => placeTile(i);
+                grid.appendChild(cell);
             }
         }
 
-        function selectTile(type) {
-            selectedTile = type;
-            document.querySelectorAll('.button-group button').forEach(btn => 
-                btn.style.backgroundColor = btn.innerText.includes(type) ? '#ddd' : ''
-            );
+        // 选择题验证
+        function checkQuiz(quizNum, btn) {
+            const correct = (quizNum === 1 && btn.innerText.includes("B")) || 
+(quizNum === 2 && btn.innerText.includes("A"));
+            const resultEl = document.getElementById(`quiz${quizNum}`);
+            resultEl.textContent = correct ? "✓ 正确！" : "✗ 请重新选择";
+            resultEl.style.color = correct ? "green" : "red";
         }
 
-        function placeTile(x, y) {
-            if(!selectedTile) return;
-            const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
-            if(cell.classList.contains('start-point') || cell.classList.contains('end-point')) return;
+        function selectTile(index) {
+            selectedTile = index;
+            document.querySelectorAll('button').forEach(btn => 
+                btn.classList.remove('selected-tile'));
+            event.target.classList.add('selected-tile');
+        }
+
+        function placeTile(index) {
+            if(!selectedTile || index === 0 || index === 7) return;
             
+            const cell = document.querySelector(`[data-index="${index}"]`);
             cell.className = `cell ${selectedTile}`;
         }
 
         function validatePath() {
             if(attempts <= 0) return;
             
-            attempts--;
-            document.getElementById('attempts').textContent = attempts;
+            const cells = document.querySelectorAll('.cell');
+            let correct = true;
             
-            const solution = scenes[currentScene].solution;
-            const cells = Array.from(document.querySelectorAll('.cell'));
-            let isValid = true;
-
-            cells.forEach(cell => {
-                const x = parseInt(cell.dataset.x);
-                const y = parseInt(cell.dataset.y);
-                const isSolution = solution.some(pos => pos[0] === x && pos[1] === y);
+            cells.forEach((cell, i) => {
+                const expected = solution[i];
+                const actual = cell.className.includes(expected);
                 
-                if(isSolution) {
-                    const correctType = solution.indexOf([x,y]) === solution.length-1 ? 'circular' : 
-                                      solution[0][0] !== solution[1][0] ? 'striped' : 'circular';
-                    
-                    if(!cell.classList.contains(correctType)) isValid = false;
+                if(!actual && i>0 && i<7) {
+                    correct = false;
+                    cell.style.border = "2px solid red";
                 }
             });
 
-            if(!isValid) {
-                alert(`Path invalid! ${attempts} attempts remaining`);
-                if(attempts === 0) showSolution();
+            if(correct) {
+                alert("恭喜！正确铺设盲道！");
             } else {
-                alert("Congratulations! Path is accessible!");
+                attempts--;
+                document.getElementById('attempts').textContent = attempts;
+                
+                if(attempts === 0) {
+                    showSolution();
+                    alert("机会用尽，已显示正确答案");
+                }
             }
         }
 
         function showSolution() {
-            scenes[currentScene].solution.forEach(([x,y]) => {
-                const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
-                cell.classList.add('solution');
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, i) => {
+                if(i !== 0 && i !== 7) {
+                    cell.className = `cell ${solution[i]}`;
+                    cell.classList.add('correct');
+                }
             });
         }
 
-        function switchScene(index) {
-            currentScene = index;
-            attempts = 3;
-            document.getElementById('attempts').textContent = 3;
-            initGrid();
-        }
-
-        initGrid();
+        // 初始化游戏
+        initGame();
     </script>
 </body>
 </html>
