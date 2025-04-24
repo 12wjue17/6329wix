@@ -2,22 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Zoomable Mind Map</title>
+    <title>Interactive Mind Map</title>
     <style>
         .container {
-            width: 80%;
+            width: 800px;
             height: 600px;
-            margin: 20px auto;
             border: 1px solid #ccc;
+            margin: 20px auto;
             overflow: hidden;
             position: relative;
+            cursor: grab;
         }
 
         #mindmap {
             position: absolute;
-            transform-origin: 0 0;
             transition: transform 0.3s ease;
-            image-rendering: -webkit-optimize-contrast; /* Improve PNG scaling */
+            image-rendering: -webkit-optimize-contrast;
         }
 
         .controls {
@@ -28,50 +28,93 @@
         button {
             padding: 10px 20px;
             margin: 0 5px;
-            cursor: #2196F3;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
             border: none;
             border-radius: 4px;
-            color: white;
-            background: #2196F3;
+        }
+
+        button:hover {
+            background: #0056b3;
         }
     </style>
 </head>
 <body>
-    <h2 style="text-align: center;">Zoomable Mind Map Viewer</h2>
-    
     <div class="controls">
         <button onclick="zoom(0.2)">Zoom In</button>
         <button onclick="zoom(-0.2)">Zoom Out</button>
-        <button onclick="resetZoom()">Reset</button>
+        <button onclick="reset()">Reset</button>
     </div>
-
-    <div class="container">
-        <img id="mindmap" src="youtube.png" alt="Mind Map">
+    
+    <div class="container" id="container">
+        <img src="youtube.png" id="mindmap" draggable="false">
     </div>
 
     <script>
         let scale = 1;
-        const mindmap = document.getElementById('mindmap');
+        let posX = 0;
+        let posY = 0;
+        let isDragging = false;
+        let startX, startY;
 
-        function zoom(ratio) {
-            scale = Math.min(Math.max(0.5, scale + ratio), 3);
+        // Zoom function
+        function zoom(delta) {
+            const container = document.getElementById('container');
+            const mindmap = document.getElementById('mindmap');
+            
+            scale = Math.min(Math.max(0.5, scale + delta), 3);
             updateTransform();
         }
 
-        function resetZoom() {
+        // Reset function
+        function reset() {
             scale = 1;
+            posX = 0;
+            posY = 0;
             updateTransform();
         }
 
+        // Drag handlers
+        document.getElementById('container').addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - posX;
+            startY = e.clientY - posY;
+            container.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            posX = e.clientX - startX;
+            posY = e.clientY - startY;
+            updateTransform();
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            container.style.cursor = 'grab';
+        });
+
+        // Update transform matrix
         function updateTransform() {
-            mindmap.style.transform = `scale(${scale})`;
+            const mindmap = document.getElementById('mindmap');
+            mindmap.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
         }
 
         // Mouse wheel zoom
-        document.querySelector('.container').addEventListener('wheel', (e) => {
+        document.getElementById('container').addEventListener('wheel', (e) => {
             e.preventDefault();
-            zoom(e.deltaY > 0 ? -0.1 : 0.1);
+            zoom(e.deltaY * -0.001);
         });
+
+        // Initial position
+        window.onload = () => {
+            const mindmap = document.getElementById('mindmap');
+            posX = (container.offsetWidth - mindmap.offsetWidth) / 2;
+            posY = (container.offsetHeight - mindmap.offsetHeight) / 2;
+            updateTransform();
+        };
     </script>
 </body>
 </html>
